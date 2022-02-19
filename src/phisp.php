@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/Users/bruno.clemente/.phpbrew/php/php-8.1.3/bin/php
 <?php
 
 $stdin = fopen("php://stdin", "r");
@@ -9,22 +9,27 @@ while (($data = fgets($stdin)) !== false) {
     print_cursor();
 }
 
-function read(string $command): string {
+function read(string $command): string
+{
     return $command;
 }
 
-function evaluation(string $command): string {
+function evaluation(string $command): string
+{
     return $command;
 }
 
-function print_code(string $command): string {
+function print_code(string $command): string
+{
     return $command;
 }
 
-function rep(string $command) : string {
+function rep(string $command): string
+{
     return print_code(evaluation(read($command)));
 }
 
-function print_cursor(): void {
+function print_cursor(): void
+{
     echo "user> ";
 }
