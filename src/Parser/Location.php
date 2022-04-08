@@ -9,4 +9,8 @@ class Location
         public int $column,
     ) {
     }
+
+    public function __toString(): string {
+        return "$this->row:$this->column";
+    }
 }

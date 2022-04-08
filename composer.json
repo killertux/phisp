@@ -14,5 +14,7 @@
             "email": "bruno.canguru@hotmail.com"
         }
     ],
-    "require": {}
+    "require": {
+      "ext-ctype": "*"
+    }
 }
