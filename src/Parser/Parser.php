@@ -24,9 +24,9 @@ class Parser
         } elseif ($char === '-' && is_numeric($this->peekNext())) {
             return $this->parseNumber();
         } elseif ($char === null) {
-            return null;
+			return null;
         } else {
-            throw new \Exception("Cannot parse $char at location $this->location");
+            return $this->parseSymbol();
         }
     }
 
@@ -40,7 +40,6 @@ class Parser
             $nodes[] = $this->nextNode();
         }
 		assert($this->nextValidChar() === ')', 'A list should always be closed here');
-		var_dump($this->location);
         return new Token(TokenType::LIST, $location, $nodes);
     }
 
@@ -53,7 +52,28 @@ class Parser
         return new Token(TokenType::NUMBER, $location, (float)$number);
     }
 
-    private function nextChar(): ?string {
+	private function parseSymbol(): Token {
+    	$location = clone $this->location;
+    	$symbol_name = $this->currentChar();
+    	while (($char = $this->peekNext()) !== null) {
+    		if (!$this->isValidSymbol($char)) {
+    			break;
+		    }
+    		$symbol_name .= $this->nextChar();
+	    }
+	    switch ($symbol_name) {
+		    case 'true':
+		    	return new Token(TokenType::BOOL, $location, true);
+		    case 'false':
+			    return new Token(TokenType::BOOL, $location, false);
+		    case 'nil':
+			    return new Token(TokenType::NIL, $location, null);
+		    default:
+			    return new Token(TokenType::SYMBOL, $location, $symbol_name);
+	    }
+	}
+
+	private function nextChar(): ?string {
         if ($this->position + 1 !== strlen($this->code) - 1) {
             $this->position++;
             $next_char = $this->code[$this->position];
@@ -70,17 +90,17 @@ class Parser
 
 	private function nextValidChar(): ?string {
 		$next = $this->nextChar();
-		if (ctype_space($next)) {
+		if ($this->isWhiteSpace($next)) {
 			return $this->nextValidChar();
 		}
 		return $next;
 	}
 
-    private function currentChar(): string {
+	private function currentChar(): string {
         return $this->code[$this->position];
     }
 
-    private function peekNext(int $position = null): ?string {
+	private function peekNext(int $position = null): ?string {
         $position ??= $this->position;
         if ($position + 1 !== strlen($this->code) - 1) {
             return $this->code[$position + 1];
@@ -88,12 +108,27 @@ class Parser
         return null;
     }
 
-    private function peekNextValid(int $position = null): ?string {
+	private function peekNextValid(int $position = null): ?string {
 		$position ??= $this->position;
         $next = $this->peekNext($position);
-        if (ctype_space($next)) {
+        if ($this->isWhiteSpace($next)) {
             return $this->peekNextValid($position + 1);
         }
         return $next;
     }
+
+    private function isWhiteSpace(string $char): bool {
+    	return ctype_space($char) || $char === ',';
+    }
+
+	private function isValidSymbol(string $char): bool {
+    	return !(
+    		$char === '(' ||
+		    $char === ')' ||
+		    $char === '[' ||
+		    $char === ']' ||
+		    $char === ',' ||
+		    ctype_space($char)
+	    );
+	}
 }

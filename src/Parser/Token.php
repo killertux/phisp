@@ -15,6 +15,9 @@ class Token
         return match ($this->token_type) {
             TokenType::LIST => '(' . implode(' ', $this->operand) . ')',
             TokenType::NUMBER => (string) $this->operand,
+	        TokenType::SYMBOL => (string) $this->operand,
+	        TokenType::BOOL => (string) $this->operand ? 'true' : 'false',
+	        TokenType::NIL => 'nil',
         };
     }
 }
