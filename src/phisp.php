@@ -1,9 +1,10 @@
-#!/usr/bin/php
-<?php
+#!/usr/local/bin/php
+<?php declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Clemente\Phisp\Parser\Parser;
+use Clemente\Phisp\Parser\ParserException;
 use Clemente\Phisp\Parser\Token;
 
 $stdin = fopen("php://stdin", "r");
@@ -15,7 +16,11 @@ while (($data = fgets($stdin)) !== false) {
 }
 
 function read(string $command): Token {
-	return (new Parser($command))->nextNode();
+	try {
+		return (new Parser($command))->nextNode();
+	} catch (ParserException $exception) {
+		return $exception->toNop();
+	}
 }
 
 function evaluation(Token $command): Token {
