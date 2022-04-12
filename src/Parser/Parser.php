@@ -2,8 +2,7 @@
 
 namespace Clemente\Phisp\Parser;
 
-class Parser
-{
+class Parser {
 
 	private int $position;
 	private Location $location;

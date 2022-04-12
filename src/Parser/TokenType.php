@@ -2,16 +2,17 @@
 
 namespace Clemente\Phisp\Parser;
 
-enum TokenType
+enum TokenType: string
 {
-	case LIST;
-	case VECTOR;
-	case HASHMAP;
-	case NUMBER;
-	case SYMBOL;
-	case KEYWORD;
-	case BOOL;
-	case NIL;
-	case STRING;
-	case NOP;
+	case LIST = 'list';
+	case VECTOR = 'vector';
+	case HASHMAP = 'hasmap';
+	case NUMBER = 'number';
+	case SYMBOL = 'symbol';
+	case KEYWORD = 'keyword';
+	case BOOL = 'bool';
+	case NIL = 'nil';
+	case STRING = 'string';
+	case NOP = 'nop';
+	case FUNCTION = 'function';
 }

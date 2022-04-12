@@ -22,6 +22,7 @@ class Token
 			TokenType::BOOL => $this->operand ? 'true' : 'false',
 			TokenType::NIL => 'nil',
 			TokenType::NOP => (string) $this->operand,
+			TokenType::FUNCTION => '(function)',
 		};
 	}
 }
