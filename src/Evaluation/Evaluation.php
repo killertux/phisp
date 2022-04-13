@@ -93,8 +93,8 @@ class Evaluation {
 		$this->pushNewEnvironment();
 		/** @var Token $bindings */
 		$bindings = array_shift($token->operand);
-		if ($bindings->token_type !== TokenType::LIST) {
-			throw new RuntimeException("First parameter of let* needs to be a list. $bindings->token_type->value received at $bindings->location", $bindings->location);
+		if ($bindings->token_type !== TokenType::LIST && $bindings->token_type !== TokenType::VECTOR) {
+			throw new RuntimeException("First parameter of let* needs to be a list or a vector. {$bindings->token_type->value} received at $bindings->location", $bindings->location);
 		}
 		while (count($bindings->operand) !== 0) {
 			/** @var Token $symbol_name */
