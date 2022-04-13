@@ -11,9 +11,10 @@ use Clemente\Phisp\Evaluation\RuntimeException;
 
 $stdin = fopen("php://stdin", "r");
 print_cursor();
+$evaluation = new Evaluation();
 
 while (($data = fgets($stdin)) !== false) {
-	echo rep($data) . PHP_EOL;
+	echo rep($data, $evaluation) . PHP_EOL;
 	print_cursor();
 }
 
@@ -25,9 +26,9 @@ function read(string $command): Token {
 	}
 }
 
-function evaluation(Token $token): Token {
+function evaluation(Token $token, Evaluation $evaluation): Token {
 	try {
-		return (new Evaluation())->evaluate($token);
+		return $evaluation->evaluate($token);
 	} catch (RuntimeException $exception) {
 		return $exception->toNop();
 	}
@@ -37,8 +38,8 @@ function print_code(Token $command): string {
 	return (string)$command;
 }
 
-function rep(string $command): string {
-	return print_code(evaluation(read($command)));
+function rep(string $command, Evaluation $evaluation): string {
+	return print_code(evaluation(read($command), $evaluation));
 }
 
 function print_cursor(): void {

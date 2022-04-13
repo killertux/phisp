@@ -2,59 +2,85 @@
 
 namespace Clemente\Phisp\Evaluation;
 
+use Clemente\Phisp\Parser\Location;
 use Clemente\Phisp\Parser\Token;
 use Clemente\Phisp\Parser\TokenType;
 
 class Environment {
 
 	private function __construct(
-		private array $environment
+		private array $environment,
+		private ?Environment $parent
 	) {}
 
 	public static function createDefault(): self {
 		return new self(
 			[
-				'+' => function(Token $symbol_token, Token ...$numbers): Token {
-					assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-					assertAllSameType(TokenType::NUMBER, ...$numbers);
-					return new Token(TokenType::NUMBER, $symbol_token->location, array_sum(array_column($numbers, 'operand')));
-				},
-				'*' => function(Token $symbol_token, Token ...$numbers): Token {
-					assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-					assertAllSameType(TokenType::NUMBER, ...$numbers);
-					$result = 1;
-					foreach (array_column($numbers, 'operand') as $number) {
-						$result *= $number;
+				'+' => 	new Token(
+					TokenType::FUNCTION,
+					new Location(0, 0), //TODO: Better handle this cases
+					function(Token $symbol_token, Token ...$numbers): Token {
+						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
+						assertAllSameType(TokenType::NUMBER, ...$numbers);
+						return new Token(TokenType::NUMBER, $symbol_token->location, array_sum(array_column($numbers, 'operand')));
 					}
-					return new Token(TokenType::NUMBER, $symbol_token->location, $result);
-				},
-				'-' => function(Token $symbol_token, Token ...$numbers): Token {
-					assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-					assertAllSameType(TokenType::NUMBER, ...$numbers);
-					$result = array_shift($numbers)->operand;
-					foreach (array_column($numbers, 'operand') as $number) {
-						$result -= $number;
+				),
+				'*' => new Token(
+					TokenType::FUNCTION,
+					new Location(0, 0), //TODO: Better handle this cases,
+					function(Token $symbol_token, Token ...$numbers): Token {
+						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
+						assertAllSameType(TokenType::NUMBER, ...$numbers);
+						$result = 1;
+						foreach (array_column($numbers, 'operand') as $number) {
+							$result *= $number;
+						}
+						return new Token(TokenType::NUMBER, $symbol_token->location, $result);
 					}
-					return new Token(TokenType::NUMBER, $symbol_token->location, $result);
-				},
-				'/' => function(Token $symbol_token, Token ...$numbers): Token {
-					assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-					assertAllSameType(TokenType::NUMBER, ...$numbers);
-					$result = array_shift($numbers)->operand;
-					foreach (array_column($numbers, 'operand') as $number) {
-						$result /= $number;
+				),
+				'-' => new Token(
+					TokenType::FUNCTION,
+					new Location(0, 0), //TODO: Better handle this cases,
+					function(Token $symbol_token, Token ...$numbers): Token {
+						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
+						assertAllSameType(TokenType::NUMBER, ...$numbers);
+						$result = array_shift($numbers)->operand;
+						foreach (array_column($numbers, 'operand') as $number) {
+							$result -= $number;
+						}
+						return new Token(TokenType::NUMBER, $symbol_token->location, $result);
 					}
-					return new Token(TokenType::NUMBER, $symbol_token->location, $result);
-				},
+				),
+				'/' => new Token(
+					TokenType::FUNCTION,
+					new Location(0, 0), //TODO: Better handle this cases,
+					function(Token $symbol_token, Token ...$numbers): Token {
+						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
+						assertAllSameType(TokenType::NUMBER, ...$numbers);
+						$result = array_shift($numbers)->operand;
+						foreach (array_column($numbers, 'operand') as $number) {
+							$result /= $number;
+						}
+						return new Token(TokenType::NUMBER, $symbol_token->location, $result);
+					}
+				),
 			],
+			null
 		);
 	}
 
-	public function getCallable(Token $token): Token {
+	public function find(string $symbol): ?Token {
+		return $this->environment[$symbol] ?? $this->parent?->find($symbol);
+	}
+
+	public function set(Token $symbol_token, Token $data): void {
+		assert($symbol_token->token_type === TokenType::SYMBOL, 'Should always be a symbol');
+		$this->environment[$symbol_token->operand] = $data;
+	}
+
+	public function get(Token $token): Token {
 		assert($token->token_type === TokenType::SYMBOL, 'Should always be a symbol');
-		return array_key_exists($token->operand, $this->environment)?
-			new Token(TokenType::FUNCTION, $token->location, $this->environment[$token->operand]) :
-			throw new RuntimeException("Symbol $token->operand not found", $token->location);
+		return $this->find($token->operand) ?? throw new RuntimeException("Symbol $token->operand not found", $token->location);
 	}
 
 }
