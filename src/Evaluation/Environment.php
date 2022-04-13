@@ -8,9 +8,9 @@ use Clemente\Phisp\Parser\TokenType;
 
 class Environment {
 
-	private function __construct(
+	public function __construct(
 		private array $environment,
-		private ?Environment $parent
+		public ?Environment $parent
 	) {}
 
 	public static function createDefault(): self {
@@ -80,7 +80,8 @@ class Environment {
 
 	public function get(Token $token): Token {
 		assert($token->token_type === TokenType::SYMBOL, 'Should always be a symbol');
-		return $this->find($token->operand) ?? throw new RuntimeException("Symbol $token->operand not found", $token->location);
+		$data = $this->find($token->operand);
+		return $data !== null ? new Token($data->token_type, $token->location, $data->operand) : throw new RuntimeException("Symbol $token->operand not found", $token->location);
 	}
 
 }

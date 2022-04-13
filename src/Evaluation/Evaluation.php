@@ -46,6 +46,7 @@ class Evaluation {
 		}
 		return match ($first_operand->operand) {
 			'def!' => $this->evaluateDef($token),
+			'let*' => $this->evaluateLet($token),
 			default => $this->evaluateSymbol($token),
 		};
 	}
@@ -79,5 +80,47 @@ class Evaluation {
 		}
 		$this->enviroment->set($symbol_name, $symbol_data);
 		return $symbol_data;
+	}
+
+	private function evaluateLet(Token $token): Token {
+		/** @var Token $let */
+		$let = array_shift($token->operand);
+		assert("let*" === $let->operand);
+		$count_params = count($token->operand);
+		if ($count_params != 2) {
+			throw new RuntimeException("let* should receive 2 parameters. $count_params received at $let->location", $let->location);
+		}
+		$this->pushNewEnvironment();
+		/** @var Token $bindings */
+		$bindings = array_shift($token->operand);
+		if ($bindings->token_type !== TokenType::LIST) {
+			throw new RuntimeException("First parameter of let* needs to be a list. $bindings->token_type->value received at $bindings->location", $bindings->location);
+		}
+		while (count($bindings->operand) !== 0) {
+			/** @var Token $symbol_name */
+			$symbol_name = array_shift($bindings->operand);
+			if ($symbol_name->token_type !== TokenType::SYMBOL) {
+				throw new RuntimeException("Expected a symbol. $symbol_name->token_type->value found", $symbol_name->location);
+			}
+			/** @var Token|null $data */
+			$data = array_shift($bindings->operand);
+			if ($data === null) {
+				throw new RuntimeException("Expected a value to bind", $symbol_name->location);
+			}
+			$this->enviroment->set($symbol_name, $this->evaluate($data));
+		}
+		$result = $this->evaluate(array_shift($token->operand));
+		$this->popEnvironment();
+		return $result;
+	}
+
+	private function pushNewEnvironment(): void {
+		$new_environment = new Environment([], $this->enviroment);
+		$this->enviroment = $new_environment;
+	}
+
+	private function popEnvironment(): void {
+		$parent = $this->enviroment->parent;
+		$this->enviroment = $parent;
 	}
 }

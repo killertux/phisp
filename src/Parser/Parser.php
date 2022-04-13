@@ -62,7 +62,8 @@ class Parser {
 			}
 			$nodes[] = $this->nextNode();
 		}
-		assert($this->nextValidChar() === ')', 'A list should always be closed here');
+		$char = $this->nextValidChar();
+		assert( $char === ')', 'A list should always be closed here');
 		return new Token(TokenType::LIST, $location, $nodes);
 	}
 
