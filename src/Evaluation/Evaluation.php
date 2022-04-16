@@ -7,8 +7,8 @@ use Clemente\Phisp\Parser\TokenType;
 
 class Evaluation {
 
-	public function __construct() {
-		$this->enviroment = Environment::createDefault();
+	public function __construct(?Environment $environment = null) {
+		$this->enviroment = $environment ?? Environment::createDefault();
 	}
 
 	public function evaluate(Token $token): Token {
@@ -41,14 +41,15 @@ class Evaluation {
 		}
 		/** @var Token $first_operand */
 		$first_operand = $token->operand[0];
-		if ($first_operand->token_type !== TokenType::SYMBOL) {
-			throw new RuntimeException("Expected a symbol. Found a $first_operand->token_type->value at $first_operand->location", $first_operand->location);
+		if ($first_operand->token_type === TokenType::SYMBOL) {
+			return match ($first_operand->operand) {
+				'def!' => $this->evaluateDef($token),
+				'let*' => $this->evaluateLet($token),
+				'let*' => $this->evaluateLet($token),
+				default => $this->evaluateSymbol($token),
+			};
 		}
-		return match ($first_operand->operand) {
-			'def!' => $this->evaluateDef($token),
-			'let*' => $this->evaluateLet($token),
-			default => $this->evaluateSymbol($token),
-		};
+		return $this->evaluateSymbol($token);
 	}
 
 	private function evaluateSymbol(Token $token): Token {
@@ -60,7 +61,7 @@ class Evaluation {
 			throw new RuntimeException("Expect function. Got {$first->token_type} at {$first->location}", $first->location);
 		}
 		$callable = $first->operand;
-		return $callable($first, ...$evaluated_list->operand);
+		return $callable($this->enviroment, $first, ...$evaluated_list->operand);
 	}
 
 	private function evaluateDef(Token $token): Token {
@@ -90,7 +91,8 @@ class Evaluation {
 		if ($count_params != 2) {
 			throw new RuntimeException("let* should receive 2 parameters. $count_params received at $let->location", $let->location);
 		}
-		$this->pushNewEnvironment();
+		$environment = new Environment([], $this->enviroment);
+
 		/** @var Token $bindings */
 		$bindings = array_shift($token->operand);
 		if ($bindings->token_type !== TokenType::LIST && $bindings->token_type !== TokenType::VECTOR) {
@@ -107,20 +109,8 @@ class Evaluation {
 			if ($data === null) {
 				throw new RuntimeException("Expected a value to bind", $symbol_name->location);
 			}
-			$this->enviroment->set($symbol_name, $this->evaluate($data));
+			$environment->set($symbol_name, $this->evaluate($data));
 		}
-		$result = $this->evaluate(array_shift($token->operand));
-		$this->popEnvironment();
-		return $result;
-	}
-
-	private function pushNewEnvironment(): void {
-		$new_environment = new Environment([], $this->enviroment);
-		$this->enviroment = $new_environment;
-	}
-
-	private function popEnvironment(): void {
-		$parent = $this->enviroment->parent;
-		$this->enviroment = $parent;
+		return (new Evaluation($environment))->evaluate(array_shift($token->operand));
 	}
 }

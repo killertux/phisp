@@ -15,56 +15,7 @@ class Environment {
 
 	public static function createDefault(): self {
 		return new self(
-			[
-				'+' => 	new Token(
-					TokenType::FUNCTION,
-					new Location(0, 0), //TODO: Better handle this cases
-					function(Token $symbol_token, Token ...$numbers): Token {
-						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-						assertAllSameType(TokenType::NUMBER, ...$numbers);
-						return new Token(TokenType::NUMBER, $symbol_token->location, array_sum(array_column($numbers, 'operand')));
-					}
-				),
-				'*' => new Token(
-					TokenType::FUNCTION,
-					new Location(0, 0), //TODO: Better handle this cases,
-					function(Token $symbol_token, Token ...$numbers): Token {
-						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-						assertAllSameType(TokenType::NUMBER, ...$numbers);
-						$result = 1;
-						foreach (array_column($numbers, 'operand') as $number) {
-							$result *= $number;
-						}
-						return new Token(TokenType::NUMBER, $symbol_token->location, $result);
-					}
-				),
-				'-' => new Token(
-					TokenType::FUNCTION,
-					new Location(0, 0), //TODO: Better handle this cases,
-					function(Token $symbol_token, Token ...$numbers): Token {
-						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-						assertAllSameType(TokenType::NUMBER, ...$numbers);
-						$result = array_shift($numbers)->operand;
-						foreach (array_column($numbers, 'operand') as $number) {
-							$result -= $number;
-						}
-						return new Token(TokenType::NUMBER, $symbol_token->location, $result);
-					}
-				),
-				'/' => new Token(
-					TokenType::FUNCTION,
-					new Location(0, 0), //TODO: Better handle this cases,
-					function(Token $symbol_token, Token ...$numbers): Token {
-						assertAtLestNumberParams($symbol_token, 2, ...$numbers);
-						assertAllSameType(TokenType::NUMBER, ...$numbers);
-						$result = array_shift($numbers)->operand;
-						foreach (array_column($numbers, 'operand') as $number) {
-							$result /= $number;
-						}
-						return new Token(TokenType::NUMBER, $symbol_token->location, $result);
-					}
-				),
-			],
+			Core::getCore(),
 			null
 		);
 	}
@@ -84,19 +35,4 @@ class Environment {
 		return $data !== null ? new Token($data->token_type, $token->location, $data->operand) : throw new RuntimeException("Symbol $token->operand not found", $token->location);
 	}
 
-}
-
-function assertAllSameType(TokenType $token_type, Token ...$tokens): void {
-	foreach ($tokens as $token) {
-		if ($token->token_type !== $token_type) {
-			throw new RuntimeException("Expected $token_type->value. Got $token->token_type. At $token->location", $token->location);
-		}
-	}
-}
-
-function assertAtLestNumberParams(Token $symbol_token, int $n_params, Token ...$params): void {
-	$count = count($params);
-	if ($count < $n_params) {
-		throw new RuntimeException("Expected at least $n_params params. $count found. At $symbol_token->location", $symbol_token->location);
-	}
 }
